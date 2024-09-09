@@ -1,0 +1,54 @@
+.payout-setup {
+    background: #f9f9f9;
+    border: 1px solid #e5e5e5;
+    padding: 10px;
+    margin-bottom: 15px;
+}
+
+.payout {
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+.payout label {
+    display: inline-block;
+    width: 150px;
+}
+
+.payout input[type="email"],
+.payout input[type="number"],
+.payout select {
+    width: 200px;
+}
+
+.currency {
+    margin-left: 5px;
+}
+
+.button {
+    margin-right: 10px;
+}
+
+.pulse-commissions-info {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-left: 4px solid #00a0d2;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    margin: 20px 0;
+    padding: 1px 12px;
+}
+
+.pulse-commissions-info h2 {
+    margin-bottom: 10px;
+}
+
+.pulse-commissions-info ol {
+    margin-left: 20px;
+}
+
+.pulse-commissions-info ul {
+    list-style-type: disc;
+    margin-left: 20px;
+}
