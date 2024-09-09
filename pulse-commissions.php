@@ -129,7 +129,16 @@ class Pulse_Commissions {
             'pulse-commissions',
             'pulse_commissions_btcpay'
         );
-
+		
+        // Payout name
+        add_settings_field(
+            'payout_name',
+            __('Payout Name', 'pulse-commissions'),
+            array($this, 'payout_name_callback'),
+            'pulse-commissions',
+            'pulse_commissions_btcpay'
+        );
+		
         // Commission Settings Section
         add_settings_section(
             'pulse_commissions_payouts',
@@ -187,6 +196,10 @@ class Pulse_Commissions {
                 $sanitary_values['payout_setups'][] = $sanitary_setup;
             }
         }
+		
+		if (isset($input['payout_name'])) {
+            $sanitary_values['payout_name'] = sanitize_text_field($input['payout_name']);
+        }
 
         return $sanitary_values;
     }
@@ -236,6 +249,14 @@ class Pulse_Commissions {
         }
         echo '</div>';
         echo '<button type="button" id="add-payout-setup" class="button">' . __('Add Payout Setup', 'pulse-commissions') . '</button>';
+    }
+	
+	// Callback function for payout name field
+    public function payout_name_callback() {
+        $options = get_option('pulse_commissions_options');
+        $value = isset($options['payout_name']) ? $options['payout_name'] : 'Commission Payout';
+        echo '<input type="text" id="payout_name" name="pulse_commissions_options[payout_name]" value="' . esc_attr($value) . '" class="regular-text">';
+        echo '<p class="description">' . __('Enter the name you want to use for payouts in BTCPayServer. Default is "Commission Payout".', 'pulse-commissions') . '</p>';
     }
 
     private function render_payout_setup($index, $setup) {
@@ -561,14 +582,14 @@ class Pulse_Commissions {
         }
     }
 	
-	    private function process_commission_payouts($order, $commission_totals, $btcpay_integration) {
+    private function process_commission_payouts($order, $commission_totals, $btcpay_integration) {
         if (empty($commission_totals)) {
             error_log("Pulse Commissions: No commissions to process for order " . $order->get_id());
             return;
         }
 
         $total_commission = array_sum(array_column($commission_totals, 'total'));
-        $payout_id = $btcpay_integration->create_payout($commission_totals, $total_commission, $order->get_currency());
+        $payout_id = $btcpay_integration->create_payout($commission_totals, $total_commission, $order->get_currency(), $order->get_id());
 
         if ($payout_id) {
             $this->add_commission_to_order($order, $commission_totals, $payout_id);
@@ -577,7 +598,7 @@ class Pulse_Commissions {
             $order->add_order_note(__('Failed to create commission payout. Please check the logs.', 'pulse-commissions'));
         }
     }
-
+	
     private function calculate_commission($payout_type, $payout_amount, $item_total, $quantity) {
         if ($payout_type === 'percentage') {
             return $item_total * ($payout_amount / 100);

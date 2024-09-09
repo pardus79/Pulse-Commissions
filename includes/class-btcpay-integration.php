@@ -15,6 +15,7 @@ class Pulse_Commissions_BTCPay_Integration {
     private $api_key;
     private $store_id;
     private $auto_approve_claims;
+	private $payout_name;
 
     public function __construct() {
         $options = get_option('pulse_commissions_options');
@@ -22,19 +23,20 @@ class Pulse_Commissions_BTCPay_Integration {
         $this->api_key = isset($options['btcpay_api_key']) ? $options['btcpay_api_key'] : '';
         $this->store_id = isset($options['btcpay_store_id']) ? $options['btcpay_store_id'] : '';
         $this->auto_approve_claims = isset($options['auto_approve_claims']) ? (bool) $options['auto_approve_claims'] : false;
+		$this->payout_name = isset($options['payout_name']) ? $options['payout_name'] : 'Commission Payout';
     }
 
-    public function create_payout($commission_totals, $total_amount, $currency) {
-        error_log('Pulse Commissions: Creating payout for total amount: ' . $total_amount . ' ' . $currency);
+    public function create_payout($commission_totals, $total_amount, $currency, $order_id) {
+        error_log('Pulse Commissions: Creating payout for total amount: ' . $total_amount . ' ' . $currency . ' for order ' . $order_id);
 
         // Step 1: Create a Pull Payment
-        $pull_payment_id = $this->create_pull_payment($total_amount, $currency);
+        $pull_payment_id = $this->create_pull_payment($total_amount, $currency, $order_id);
         if (!$pull_payment_id) {
-            error_log('Pulse Commissions: Failed to create pull payment');
+            error_log('Pulse Commissions: Failed to create pull payment for order ' . $order_id);
             return false;
         }
 
-        error_log('Pulse Commissions: Pull payment created successfully with ID: ' . $pull_payment_id);
+        error_log('Pulse Commissions: Pull payment created successfully with ID: ' . $pull_payment_id . ' for order ' . $order_id);
 
         // Step 2: Verify Pull Payment
         $pull_payment = $this->get_pull_payment($pull_payment_id);
@@ -93,7 +95,7 @@ class Pulse_Commissions_BTCPay_Integration {
         return json_decode($response_body, true);
     }
 
-    private function create_pull_payment($amount, $currency) {
+    private function create_pull_payment($amount, $currency, $order_id) {
         if (empty($this->api_url) || empty($this->api_key) || empty($this->store_id)) {
             error_log('Pulse Commissions: BTCPay Server API URL, key, or Store ID is not set');
             return false;
@@ -102,7 +104,8 @@ class Pulse_Commissions_BTCPay_Integration {
         $endpoint = $this->api_url . 'api/v1/stores/' . $this->store_id . '/pull-payments';
 
         $body = array(
-            'name' => 'Commission Payout',
+            'name' => $this->payout_name . ' - Order #' . $order_id,
+            'description' => $this->payout_name,
             'amount' => strval($amount),
             'currency' => $currency,
             'paymentMethods' => ['BTC-LightningNetwork'],
