@@ -369,77 +369,77 @@ class Pulse_Commissions {
         <?php
     }
 
-    public function add_custom_field_to_products() {
-        global $post;
+public function add_custom_field_to_products() {
+    global $post;
 
-        // Get all payout setups
-        $options = get_option('pulse_commissions_options');
-        $payout_setups = isset($options['payout_setups']) ? $options['payout_setups'] : array();
+    // Get all payout setups
+    $options = get_option('pulse_commissions_options');
+    $payout_setups = isset($options['payout_setups']) ? $options['payout_setups'] : array();
 
-        // Prepare options for select field
-        $setup_options = array(
-            '' => __('Select a commission setup', 'pulse-commissions')
-        );
-        foreach ($payout_setups as $setup) {
-            $setup_options[$setup['product_string']] = $setup['product_string'];
-        }
-
-        // Get the current value
-        $commission_setup = get_post_meta($post->ID, '_pulse_commission_setup', true);
-
-        echo '<div class="options_group">';
-        
-        // Commission Setup Select Field
-        woocommerce_wp_select(
-            array(
-                'id' => '_pulse_commission_setup',
-                'label' => __('Commission Setup', 'pulse-commissions'),
-                'description' => __('Select a commission setup for this product.', 'pulse-commissions'),
-                'desc_tip' => true,
-                'options' => $setup_options,
-                'value' => $commission_setup
-            )
-        );
-
-        // Commission Details (read-only)
-        echo '<p class="form-field"><label>' . __('Commission Details', 'pulse-commissions') . '</label>';
-        echo '<span id="pulse-commission-details">';
-        if ($commission_setup) {
-            $this->display_commission_details($commission_setup);
-        } else {
-            _e('No commission setup selected', 'pulse-commissions');
-        }
-        echo '</span></p>';
-
-        echo '</div>';
-
-        // Add JavaScript to update commission details when selection changes
-        ?>
-        <script type="text/javascript">
-        jQuery(document).ready(function($) {
-            $('#_pulse_commission_setup').change(function() {
-                var setup = $(this).val();
-                if (setup) {
-                    $.ajax({
-                        url: ajaxurl,
-                        type: 'POST',
-                        data: {
-                            action: 'pulse_get_commission_details',
-                            setup: setup,
-                            nonce: '<?php echo wp_create_nonce('pulse_get_commission_details'); ?>'
-                        },
-                        success: function(response) {
-                            $('#pulse-commission-details').html(response);
-                        }
-                    });
-                } else {
-                    $('#pulse-commission-details').html('<?php _e('No commission setup selected', 'pulse-commissions'); ?>');
-                }
-            });
-        });
-        </script>
-        <?php
+    // Prepare options for select field
+    $setup_options = array(
+        '' => __('Select a commission setup', 'pulse-commissions')
+    );
+    foreach ($payout_setups as $setup) {
+        $setup_options[$setup['product_string']] = $setup['product_string'];
     }
+
+    // Get the current value
+    $commission_setup = get_post_meta($post->ID, '_pulse_commission_setup', true);
+
+    echo '<div class="options_group show_if_simple show_if_variable">';
+    
+    // Commission Setup Select Field
+    woocommerce_wp_select(
+        array(
+            'id' => '_pulse_commission_setup',
+            'label' => __('Commission Setup', 'pulse-commissions'),
+            'description' => __('Select a commission setup for this product.', 'pulse-commissions'),
+            'desc_tip' => true,
+            'options' => $setup_options,
+            'value' => $commission_setup
+        )
+    );
+
+    // Commission Details (read-only)
+    echo '<p class="form-field"><label>' . __('Commission Details', 'pulse-commissions') . '</label>';
+    echo '<span id="pulse-commission-details">';
+    if ($commission_setup) {
+        $this->display_commission_details($commission_setup);
+    } else {
+        _e('No commission setup selected', 'pulse-commissions');
+    }
+    echo '</span></p>';
+
+    echo '</div>';
+
+    // Add JavaScript to update commission details when selection changes
+    ?>
+    <script type="text/javascript">
+    jQuery(document).ready(function($) {
+        $('#_pulse_commission_setup').change(function() {
+            var setup = $(this).val();
+            if (setup) {
+                $.ajax({
+                    url: ajaxurl,
+                    type: 'POST',
+                    data: {
+                        action: 'pulse_get_commission_details',
+                        setup: setup,
+                        nonce: '<?php echo wp_create_nonce('pulse_get_commission_details'); ?>'
+                    },
+                    success: function(response) {
+                        $('#pulse-commission-details').html(response);
+                    }
+                });
+            } else {
+                $('#pulse-commission-details').html('<?php _e('No commission setup selected', 'pulse-commissions'); ?>');
+            }
+        });
+    });
+    </script>
+    <?php
+}
 
     private function display_commission_details($setup_string) {
         $options = get_option('pulse_commissions_options');
@@ -467,40 +467,28 @@ class Pulse_Commissions {
     }
 
     public function save_custom_field($post_id) {
-        $commission_setup = isset($_POST['_pulse_commission_setup']) ? sanitize_text_field($_POST['_pulse_commission_setup']) : '';
-        update_post_meta($post_id, '_pulse_commission_setup', $commission_setup);
+		$commission_setup = isset($_POST['_pulse_commission_setup']) ? sanitize_text_field($_POST['_pulse_commission_setup']) : '';
+		update_post_meta($post_id, '_pulse_commission_setup', $commission_setup);
         
         error_log("Pulse Commissions: Saved commission setup '$commission_setup' for product $post_id");
     }
 
-    public function add_commission_data_to_order_item($item, $cart_item_key, $values, $order) {
-        $product = $item->get_product();
-        $commission_setup = get_post_meta($product->get_id(), '_pulse_commission_setup', true);
-        
-        if (!empty($commission_setup)) {
-            $item->add_meta_data('_pulse_commission_setup', $commission_setup, true);
-            error_log("Pulse Commissions: Added commission setup '$commission_setup' to order item for product " . $product->get_id());
-        }
+public function add_commission_data_to_order_item($item, $cart_item_key, $values, $order) {
+    $product = $item->get_product();
+    $product_id = $product->get_id();
+    $parent_id = $product->get_parent_id();
+    
+    // Check for commission setup on the variation first, then on the parent product
+    $commission_setup = get_post_meta($product_id, '_pulse_commission_setup', true);
+    if (!$commission_setup && $parent_id) {
+        $commission_setup = get_post_meta($parent_id, '_pulse_commission_setup', true);
     }
-	
-	    public function add_commission_data_to_manual_order_item($item_id, $item, $order_id) {
-        if (!$item instanceof WC_Order_Item_Product) {
-            return;
-        }
-
-        $product = $item->get_product();
-        if (!$product) {
-            return;
-        }
-
-        $commission_setup = get_post_meta($product->get_id(), '_pulse_commission_setup', true);
-        
-        if (!empty($commission_setup)) {
-            $item->add_meta_data('_pulse_commission_setup', $commission_setup, true);
-            $item->save();
-            error_log("Pulse Commissions: Added commission setup '$commission_setup' to manually added order item for product " . $product->get_id());
-        }
+    
+    if (!empty($commission_setup)) {
+        $item->add_meta_data('_pulse_commission_setup', $commission_setup, true);
+        error_log("Pulse Commissions: Added commission setup '$commission_setup' to order item for product " . $product_id);
     }
+}
 
     public function get_commission_details() {
         check_ajax_referer('pulse_get_commission_details', 'nonce');
@@ -516,39 +504,64 @@ class Pulse_Commissions {
 
         wp_send_json_success($details);
     }
+	
+	public function add_commission_data_to_manual_order_item($item_id, $item, $order_id) {
+    if (!$item instanceof WC_Order_Item_Product) {
+        return;
+    }
 
-    public function process_order_commissions($order_id) {
-        error_log("Pulse Commissions: Processing commissions for order $order_id");
-        
-        $order = wc_get_order($order_id);
-        if (!$order) {
-            error_log("Pulse Commissions: Invalid order ID " . $order_id);
-            return;
-        }
+    $product = $item->get_product();
+    if (!$product) {
+        return;
+    }
 
-        $options = get_option('pulse_commissions_options');
-        $payout_setups = isset($options['payout_setups']) ? $options['payout_setups'] : array();
+    $product_id = $product->get_id();
+    $parent_id = $product->get_parent_id();
+    
+    // Check for commission setup on the variation first, then on the parent product
+    $commission_setup = get_post_meta($product_id, '_pulse_commission_setup', true);
+    if (!$commission_setup && $parent_id) {
+        $commission_setup = get_post_meta($parent_id, '_pulse_commission_setup', true);
+    }
+    
+    if (!empty($commission_setup)) {
+        $item->add_meta_data('_pulse_commission_setup', $commission_setup, true);
+        $item->save();
+        error_log("Pulse Commissions: Added commission setup '$commission_setup' to manually added order item for product " . $product_id);
+    }
+}
 
-        $btcpay_integration = new Pulse_Commissions_BTCPay_Integration();
 
-        $commission_totals = array();
+public function process_order_commissions($order_id) {
+    $order = wc_get_order($order_id);
+    if (!$order) {
+        error_log("Pulse Commissions: Invalid order ID " . $order_id);
+        return;
+    }
 
-        foreach ($order->get_items() as $item_id => $item) {
-            $commission_setup = $item->get_meta('_pulse_commission_setup');
-            error_log("Pulse Commissions: Checking commission setup '$commission_setup' for item $item_id");
+    $options = get_option('pulse_commissions_options');
+    $payout_setups = isset($options['payout_setups']) ? $options['payout_setups'] : array();
 
-            if (!empty($commission_setup)) {
-                foreach ($payout_setups as $setup) {
-                    if ($setup['product_string'] === $commission_setup) {
-                        $this->calculate_item_commission($order, $item, $setup, $commission_totals);
-                    }
-                }
+    $btcpay_integration = new Pulse_Commissions_BTCPay_Integration();
+
+    $commission_totals = array();
+
+    foreach ($order->get_items() as $item_id => $item) {
+        $product = $item->get_product();
+        $product_id = $product->get_id();
+        $parent_id = $product->get_parent_id();
+
+        foreach ($payout_setups as $setup) {
+            if ($item->get_meta('_pulse_commission_setup') === $setup['product_string'] || 
+                ($parent_id && get_post_meta($parent_id, '_pulse_commission_setup', true) === $setup['product_string'])) {
+                $this->calculate_item_commission($order, $item, $setup, $commission_totals);
             }
         }
-
-        $this->process_commission_payouts($order, $commission_totals, $btcpay_integration);
     }
-	
+
+    $this->process_commission_payouts($order, $commission_totals, $btcpay_integration);
+}
+
 	private function calculate_item_commission($order, $item, $setup, &$commission_totals) {
         $product = $item->get_product();
         $product_id = $product->get_id();
@@ -652,35 +665,6 @@ class Pulse_Commissions {
         error_log("Pulse Commissions: Added commission information to order " . $order->get_id());
     }	
 	
-    private function process_item_commission($order, $item, $setup, $btcpay_integration) {
-        $product = $item->get_product();
-        $product_id = $product->get_id();
-        $item_total = $item->get_total();
-
-        error_log("Pulse Commissions: Processing commission for product $product_id, total: $item_total " . $order->get_currency());
-
-        foreach ($setup['payouts'] as $payout) {
-            $lightning_address = $payout['lightning_address'];
-            $payout_type = $payout['payout_type'];
-            $payout_amount = $payout['payout_amount'];
-
-            $commission = $this->calculate_commission($payout_type, $payout_amount, $item_total, $item->get_quantity());
-
-            if ($commission > 0) {
-                error_log("Pulse Commissions: Calculated commission of $commission " . $order->get_currency() . " for order " . $order->get_id() . ", product " . $product_id);
-
-                $payout_id = $btcpay_integration->create_payout($lightning_address, $commission, $order->get_currency());
-
-                if ($payout_id) {
-                    $this->add_commission_to_order($order, $product, $commission, $payout_id, $lightning_address);
-                } else {
-                    error_log("Pulse Commissions: Failed to create payout for order " . $order->get_id() . ", product " . $product_id);
-                    $order->add_order_note(sprintf(__('Failed to create commission payout for product %s. Please check the logs.', 'pulse-commissions'), $product->get_name()));
-                }
-            }
-        }
-    }
-
     public static function activate() {
         // Set default options if they don't exist
         $default_options = array(
