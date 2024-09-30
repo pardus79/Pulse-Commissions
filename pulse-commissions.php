@@ -3,7 +3,7 @@
  * Plugin Name: Pulse Commissions
  * Plugin URI: https://github.com/pardus79/pulse-commissions
  * Description: Automated item-specific commissions for WooCommerce using Bitcoin Lightning Network and BTCPayServer
- * Version: 0.1.0
+ * Version: 0.1.1
  * Author: BtcPins
  * Author URI: https://btcpins.com
  * License: The Unlicense
