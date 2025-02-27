@@ -33,5 +33,49 @@
             var $currency = $(this).closest('.payout').find('.currency');
             $currency.text($(this).val() === 'flat_rate' ? currency : '%');
         });
+
+        // Handle notice dismissal
+        $(document).on('click', '.pulse-commissions-v2-notice .notice-dismiss', function() {
+            $.ajax({
+                url: pulseCommissionsAdmin.ajaxurl,
+                data: {
+                    action: 'pulse_commissions_dismiss_v2_notice',
+                    nonce: pulseCommissionsAdmin.nonce
+                }
+            });
+        });
+
+        // Clear cache button
+        $('#pulse-clear-cache').on('click', function() {
+            var $button = $(this);
+            var $status = $('#cache-status');
+            
+            $button.prop('disabled', true);
+            $status.text('Clearing cache...');
+            
+            $.ajax({
+                url: pulseCommissionsAdmin.ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'pulse_commissions_clear_cache',
+                    nonce: pulseCommissionsAdmin.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $status.text(response.data.message);
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1000);
+                    } else {
+                        $status.text('Error clearing cache');
+                        $button.prop('disabled', false);
+                    }
+                },
+                error: function() {
+                    $status.text('Error clearing cache');
+                    $button.prop('disabled', false);
+                }
+            });
+        });
     });
 })(jQuery);

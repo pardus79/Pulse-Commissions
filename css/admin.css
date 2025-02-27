@@ -52,3 +52,61 @@
     list-style-type: disc;
     margin-left: 20px;
 }
+
+/* BTCPay Server version 2.0 specific styling */
+.pulse-permissions-list {
+    list-style-type: disc;
+    margin-left: 20px;
+    background: #f9f9f9;
+    padding: 10px 20px;
+    border-left: 4px solid #00a0d2;
+}
+
+.pulse-commissions-v2-notice ul {
+    list-style-type: disc;
+    margin-left: 20px;
+    padding-left: 20px;
+}
+
+.pulse-troubleshooting {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-left: 4px solid #ffb900;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    margin: 20px 0;
+    padding: 1px 12px;
+}
+
+.pulse-troubleshooting {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-left: 4px solid #ffb900;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    margin: 20px 0;
+    padding: 1px 12px;
+}
+
+#cache-status {
+    font-style: italic;
+}
+
+/* BTCPay Server version indicator */
+.notice.inline {
+    display: inline-block;
+    padding: 6px 12px;
+    margin-top: 10px;
+    margin-bottom: 15px;
+}
+
+.updated.notice.inline {
+    border-left-color: #46b450;
+}
+
+.notice.inline p {
+    margin: 0.5em 0;
+    padding: 0;
+}
+
+#cache-status {
+    font-style: italic;
+}
